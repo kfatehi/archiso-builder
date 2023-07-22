@@ -1,3 +1,5 @@
 /configs
 /pacoloco/cache
-/custompkgs/Packages/*
+/custompkgs/Packages
+/custompkgs/aur
+/custompkgs/pkglist.txt
