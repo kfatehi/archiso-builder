@@ -1,4 +1,5 @@
 #!/bin/bash
+HERE=$(dirname `readlink -f "${BASH_SOURCE:-$0}"`)
 BUILDER_TAG=archiso-builder:latest
 
 function print_help {
@@ -25,8 +26,10 @@ function process_command {
 
       echo "Building profile $name..."
       docker compose build
-      docker compose run --rm -v $PWD/configs/$name:/root/archlive -v /tmp:/tmp -w /root/archlive builder mkarchiso -v -w /tmp/archiso-work-$name -o /tmp/archiso-output-$name /root/archlive/
-      ls -lah /tmp/archiso-output-$name/*.iso
+      mnt=/tmp/archiso-$name
+      mkdir -p $mnt/work $mnt/out
+      docker compose run --rm -v $HERE/custompkgs:/root/custompkgs -v $HERE/custompkgs:/root/archlive/airootfs/root/custompkgs -v $HERE/configs/$name:/root/archlive -v /tmp:/tmp -w /root/archlive builder mkarchiso -v -w $mnt/work -o $mnt/out /root/archlive/
+      ls -lah $mnt/out/*.iso
       ;;
     new)
       if [ -z "$name" ]; then
@@ -46,7 +49,13 @@ function process_command {
       docker cp temp_builder:/usr/share/archiso/configs/releng ./configs/$name
       docker stop temp_builder > /dev/null
       ;;
-    
+    custompkgs)
+      if [[ ! -f $HERE/custompkgs/pkglist.txt ]]; then
+        echo "Error: $HERE/custompkgs/pkglist.txt not found. Cannot continue..."
+        exit 1
+      fi
+      docker compose run --rm -v $HERE/custompkgs:/root/custompkgs --name custompkgs -w /root/custompkgs builder /root/custompkgs/create.sh
+      ;;
     *)
       print_help
       ;;
