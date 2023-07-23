@@ -12,11 +12,15 @@ Please configure your preferred upstream mirror URLs in `pacoloco/pacoloco.yaml`
 
 First, get a copy of the `releng` config by using the `new` command:
 
+```bash
     ./cli.sh new foo
+```
 
 To build the image, run:
 
-    ./cli.sh build foo
+```bash
+    ./cli.sh build ./foo
+```
 
 ## Offline Installation
 
@@ -24,17 +28,59 @@ This tool facilitates offline installation.
 
 The `custompkgs` command creates a custom repository with a list of packages (including from the AUR) to host within the live environment image[^3].
 
-In order to use it, symlink or write a file in ./custompkgs/pkglist.txt with the list of packages you wish to host.
+In order to use it, specify the the directory containing the following structure as an argument to the command.
 
-This needs to be a complete list of every package you might want. The best way to generate this is to customize a standard archlinux installation and then, when finished, extract the full package list with:
+
+```bash
+./cli.sh custompkgs ./my_custom_packages_dir
+```
 
 ```
+my_custom_packages_dir/
+  |__pkglist.txt
+  |__create.sh
+```
+
+Where create.sh is a script like this:
+
+```bash
+#!/bin/bash
+set -euxo pipefail
+
+if [[ -d ./aur ]]; then
+    for file in $(ls ./aur/*.sh | sort -V); do
+        echo "Sourcing $file"
+        source $file
+    done
+fi
+
+# Creating custom repo with everything we need for an offline installation including what we've built above
+# https://wiki.archlinux.org/title/Offline_installation
+mkdir -p Packages /tmp/blankdb
+cd Packages
+pacman -Syw --cachedir . --dbpath /tmp/blankdb base base-devel linux linux-firmware mkinitcpio vim $(cat ../pkglist.txt) --noconfirm
+repo-add ./custom.db.tar.gz ./*[^sig]
+```
+
+And pkglist.txt contains the list of packages you wish to host. At the very least it should contain:
+
+```
+base
+linux
+linux-firmware
+```
+
+But it can also contain packages you have prebuilt from the AUR. It must be a complete list of every package you might want.
+
+The best way to generate this is to customize a standard archlinux installation and then, when finished, extract the full package list with:
+
+```bash
 pacman -Q | awk '{print $1}' > pkglist.txt
 ```
 
-To integrate AUR packages, symlink or create a directory `./custompkgs/aur` and in there you can add scripts. For example, to install bluez-alsa-git, you might create `./custompkgs/aur/001_bluez-alsa-git.sh` with the following content:
+If you're using the create.sh script provided above, then integrating AUR packages can be done by dreating a `aur` directory inside your custom packages directory and in there you can add scripts. For example, to install bluez-alsa-git, you might create `bluezalsa.sh` with the following content:
 
-```
+```bash
 # In order to build from AUR, we need a non-root user
 useradd -m arch
 
@@ -50,11 +96,11 @@ Server = file:///home/arch/bluez-alsa-git
 EOF
 ```
 
-The final append to pacman.conf is important so that when we export the packages for adding to the local custom repo, they exist.
+The final append to pacman.conf is important so that when we export the packages for adding to the local custom repo, the package can be found.
 
 Finally, with an appropriate releng config, your installation can use this instead of the internet.[^4]:
 
-```
+```bash
 # releng/pacman.conf and releng/airootfs/etc/pacman.conf
 # comment out core and extra, and only specify custom:
 [custom]
@@ -62,14 +108,16 @@ SigLevel = Optional TrustAll
 Server = file:///root/custompkgs/Packages
 ```
 
-The docker mounts ensure that this path makes sense within the context of the image build.
+The docker mounts ensure that this path makes sense within the context of the image build. Be sure to pass the custompackages directory again to build if using this mechanism. e.g. you will now use:
+
+```bash
+./cli.sh build ./foo ./my_custom_packages
+```
 
 ## Discussion
 
-Alternatively to using the `new` command I recommend cloning the official[^6] archiso scripts repository and symlinking the configs directory.
+Alternatively to using the `new` command I recommend cloning the upstream[^6] archiso scripts repository and symlinking the configs directory.
 This way, as you make changes, it will be more clear what you have done within the context of what others have done before you (as in, the git history is preserved) rather than taking the entire releng config as a clean slate.
-
-# References
 
 [^1]: Originally forked from https://github.com/nlhomme/archiso-builder
 [^2]: Pacman cache facilitate by Pacoloco https://github.com/anatol/pacoloco
