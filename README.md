@@ -104,7 +104,7 @@ Finally, with an appropriate releng config, your installation can use this inste
 # releng/pacman.conf and releng/airootfs/etc/pacman.conf
 # comment out core and extra, and only specify custom:
 [custom]
-SigLevel = Optional TrustAll
+SigLevel = Never
 Server = file:///root/custompkgs/Packages
 ```
 
