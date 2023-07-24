@@ -8,6 +8,8 @@ A built-in pacman cache[^2] is automatically used to prevent unnecessary downloa
 
 Please configure your preferred upstream mirror URLs in `pacoloco/pacoloco.yaml`
 
+The project may also integrate additional proxies.
+
 ## How to use?
 
 First, get a copy of the `releng` config by using the `new` command:
