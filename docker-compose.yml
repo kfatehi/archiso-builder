@@ -1,5 +1,3 @@
-version: '3'
-
 services:
   proxpi:
     container_name: proxpi
