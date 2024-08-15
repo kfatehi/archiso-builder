@@ -1,4 +1,4 @@
-FROM archlinux:base-devel-20240101.0.204074
+FROM archlinux:latest
 RUN pacman -Syu --noconfirm
 RUN pacman -S git archiso --noconfirm
 ADD ./mirrorlist /etc/pacman.d/mirrorlist
