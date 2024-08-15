@@ -84,7 +84,7 @@ function process_command {
       echo "Creating new profile $name in ./configs by copying default releng config"
       mkdir -p configs
       pushd $HERE
-      docker compose build builder
+      docker compose build --pull builder
       container_id=$(docker-compose run --no-deps --rm --name temp_builder -d builder sleep infinity)
       docker cp temp_builder:/usr/share/archiso/configs/releng ./configs/$name
       docker stop temp_builder > /dev/null
