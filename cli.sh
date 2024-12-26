@@ -111,14 +111,25 @@ function process_command {
       fi
       pushd $HERE
       docker compose build
+      if [[ $? -ne 0 ]]; then
+        echo "Error: Docker build failed"
+        exit 1
+      fi
       docker compose run --rm \
         -v $custompkgs_dir:/root/custompkgs \
         --name custompkgs -w /root/custompkgs builder /root/custompkgs/create.sh
-      
+      if [[ $? -ne 0 ]]; then
+        echo "Error: Custom package creation failed"
+        exit 1
+      fi
       # Fix the permissions after we're done
       docker compose run --rm --no-deps \
         -v $custompkgs_dir:/root/custompkgs \
         builder chown -R $(id -u):$(id -g) /root/custompkgs
+      if [[ $? -ne 0 ]]; then
+        echo "Error: Failed to fix permissions"
+        exit 1
+      fi
       popd
       ;;
     *)
